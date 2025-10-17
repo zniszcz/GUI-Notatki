@@ -416,3 +416,47 @@ public class FigureBox<T extends Figure> {
 ```
 
 ## GUI_PL_09.03 Wildcards
+
+- **Cel:** pracować z różnymi typami generyków (`FigureBox<Square>` ≠ `FigureBox<Figure>`).
+
+---
+
+### `?` – cokolwiek
+```java
+void method(FigureBox<?> box)
+
+```
+
+-   nie wiadomo, jaki typ    
+-   **nie wkładam**, tylko **czytam (Object)**
+
+----------
+
+### `? extends Figure` – górne ograniczenie
+
+```java
+void method(FigureBox<? extends Figure> box)
+```
+
+-   coś, co **dziedziczy po Figure**
+-   **czytam (Figure)**, **nie wkładam**
+-   **Producer → Extends**
+----------
+
+### `? super Circle` – dolne ograniczenie
+
+```java
+void method(FigureBox<? super Circle> box)
+```
+
+-   coś, co **jest Circle lub wyżej (Figure, Object)**
+-   **wkładam Circle**, **czytam (Object)**
+-   **Consumer → Super**
+    
+
+### PECS = Producer Extends, Consumer Super
+
+| Akcja 		| Użyj 	| 	Co robi |
+| ---				|---		| ---			|
+| Czytam | `? extends T` | nie wkładam |
+| Wkładam | `? super T` | czytam jako Object |
