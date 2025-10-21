@@ -415,48 +415,195 @@ Drugi nawias kwadratowy może być pusty bo zadeklarowałem typ w pierwszym.
 public class FigureBox<T extends Figure> {
 ```
 
+
 ## GUI_PL_09.03 Wildcards
 
-- **Cel:** pracować z różnymi typami generyków (`FigureBox<Square>` ≠ `FigureBox<Figure>`).
+- Cel: pracować z różnymi typami generyków (`FigureBox<Square>` ≠ `FigureBox<Figure>`).
+- Zasada PECS: **Producer → Extends**, **Consumer → Super**.
+
+- `?` (nieznany typ)
+  ```java
+  void method(FigureBox<?> box);
+  ```
+  - czytam jako `Object`, nie wkładam.
+
+- `? extends Figure` (górne ograniczenie)
+  ```java
+  void method(FigureBox<? extends Figure> box);
+  ```
+  - coś, co dziedziczy po `Figure`;
+  - czytam jako `Figure`, nie wkładam (`Producer → Extends`).
+
+- `? super Circle` (dolne ograniczenie)
+  ```java
+  void method(FigureBox<? super Circle> box);
+  ```
+  - `Circle` lub wyżej (`Figure`, `Object`);
+  - wkładam `Circle`, czytam jako `Object` (`Consumer → Super`).
+
+| Akcja   | Użyj          | Co robi            |
+|---------|---------------|--------------------|
+| Czytam  | `? extends T` | nie wkładam        |
+| Wkładam | `? super T`   | czytam jako Object |
+
+## GUI_PL_10.01 Wprowadzenie do Java Collection Framework
+JCF dzieli się na Kolekcje i Mapy:
+- Kolekcje (interfejs _Collection_) to między innymi:
+	- Listy (uporządkowany zbiór elementów)
+	- Zbiory
+	- Kolejki
+- Mapy (interfejs _Map_)
 
 ---
-
-### `?` – cokolwiek
-```java
-void method(FigureBox<?> box)
-
-```
-
--   nie wiadomo, jaki typ    
--   **nie wkładam**, tylko **czytam (Object)**
-
-----------
-
-### `? extends Figure` – górne ograniczenie
+- Jedne i drugie są iterowalne (interfejs _Iterable_) i wykorzystują generyki.
+- Zbiory oraz Mapy to referencje do obiektów.
+- Mapy posiadają dwa typy - klucza i wartości.
+- Kolekcje nie są tak szybkie jak tablice.
 
 ```java
-void method(FigureBox<? extends Figure> box)
+	Collection.add(); // Dodaje element
+	Collection.addAll(); // Dodaje drugą kolekcję do tej
+	Collection.clear(); // Czyści kolekcję
+	Collection.contains(); // Zwraca czy element jest w kolekcji
+	Collection.containsAll(); // Zwraca czy cała kolekcja jest zawarta w tej o którą pytamy
+	Collection.equals(); // sprawdza czy są równe
+	Collection.hashCode(); // zwraca hashcode
+	Collection.empty(); // sprawdza czy jest pusta
+	Collection.iterator(); // zwraca obiekt iteratora z tej kolekcji
+	Collection.remove(); // Usuń element
+	Collection.removeAll(); // Usuń elementy kolekcji z kolekcji
+	Collection.removeIf(); // Usuwanie warunkowe
+	Collection.retainAll(); // Pozostaw elementy
+	Collection.size(); // Zwraca rozmiar
+	Collection.stream(); // Zwraca stream danych
+	Collection.toArray(); // Zwraca Array
+```
+- W ramach listy istnieją dwie podstawowe implementacje:
+	- LinkedList - opiera się na listach dwukierunkowych - dostęp do elementu jest kosztowniejszy niż w ArrayList
+	- ArrayList - dodawanie gdzie indziej niż na końcu jest kosztowne
+
+---
+- Set (zbiór) - nie może posiadać duplikatów
+	- TreeSet - implementacja oparta o drzewo czerwono czarne. Dostęp do elementów w czasie logarytmicznym.
+	- HashSet - Dostęp do elementów jest szybki (stały). Kolejność elementów jest nieokreślona
+---
+- Queue(kolejki) - elementy przechowywane w danej kolejności (FIFO):
+	- podtypem jest PriorityQueue - elementy uporządkowane wg. priorytetu. Priorytet określony za pomocą `.compareTo()`.
+
+## GUI_PL_10.02 JCF Listy
+- Rozmiar jest dynamiczny, ale można zadeklarować przy tworzeniu rozmiar.
+- Reprezentowane przez interfejs `java.util.List`.
+- Dwa typy to `ArrayList` i `LinkedList`.
+- ArrayList zazwyczaj ma zachowaną kolejność, ale może się zmienić.
+- `.add(T elem)` dodaje na końcu a `.add(int index, T elem)` dodaje pod wskazanym indeksem.
+- `.indexOf(T elem)` zwraca indeks pierwszego wystąpienia danego elementu.
+- `.remove(int i)` usuwa po indeksie a `.remove(T elem);` po elemencie. Usuwanie po elemencie usuwa pierwsze wystąpienie elementu.
+
+## GUI_PL_10.03 JCF Zbiory
+- Po dodaniu dwóch takich samych wartości nie leci wyjątek ale nic się nie dzieje - nie jest dodawane.
+-  W hashSet kolejność definiuje funkcja hashująca
+
+## GUI_PL_10.04 JCF Kolejki
+- Działają jako FIFO
+- `Queue.remove()` zdejmuje ostatni element.
+- `Queue.peek()` wyświetla pierwszy element.
+- `Queue.poll()` wyświetli i zdejmuje pierwszy element.
+
+## GUI_PL_10.05 JCF Mapy
+- Kolekcje par klucz-wartość
+- Implementują metody z interfejsu `java.util.Map`
+- `.put(key, val)` - dodaje lub nadpisuje klucz
+- `.putIfAbsent(key, val)` - dodaje jeżeli nie ma takiego klucza
+- `.getOrDefault(key, defaultValue)` - jeżeli nie ma danego klucza to zwraca default
+- `.keySet()` zwraca zbiór kluczy jako `Set`
+- `.values()` zwraca kolekcję wartości z Mapy
+- `.entrySet()` - `Map.entry()`
+
+---
+- `HashMap` - Czas stały dostępu do elementów, kolejność nieokreślona.
+- `LinkedHashMap` - Hashmapa ale linkowana dwustronnie.
+- `TreeMap` - elementy muszą mieć dobrze określoną kolejność - jeżeli klucz nie jest liczbą to przekazujemy komparator. Dostęp do elementów jest bardzo szybki (poziomu logarytmicznego).
+
+---
+```java
+Map.containsKey(T key); // - czy posiada klucz
+Map.containsValue(V value); // - czy posiada wartość
+Map.remove(key, value); // usuwa klucz wartość, muszą się zgadzać obie składowe
+Map.remove(key); // usuwa parę po kluczu
+
+// Wyświetlanie w pętli foreach
+Map<String, String> cityCountry = new HashMap<>();
+
+for (String key: cityCountry.keySet())
+	System.out.println(key + " " cityCountry.get(key));
+	
+for (String value: cityCountry.values())
+	System.out.println(value);
+	
+for (Map.Entry<String, String> entry : cityCountry.entrySet())
+	System.out.println(entry.getKey() + " " + entry.getValue());
 ```
 
--   coś, co **dziedziczy po Figure**
--   **czytam (Figure)**, **nie wkładam**
--   **Producer → Extends**
-----------
-
-### `? super Circle` – dolne ograniczenie
+## GUI_PL_10.06 Iteratory
+- Obiekt który reprezentuje widok na kolekcję obiektów. 
+- Pamięta które elementy już zwrócił i wie czy są jeszcze jakieś do zwrócenia.
+- Używa typów generycznych.
+--- 
+```java
+// Java.util.Iterator
+hasNext() // Zwraca czy są jeszcze elementy
+next() // Zwraca kolejny element
+remove() // Usuwa ostatni element zwrócony przez next
+forEachRemaining(Consumer<? super E> action) // Wykonuje akcje dla każdego elementu który został lub do jebnięcia wyjątku 
+```
 
 ```java
-void method(FigureBox<? super Circle> box)
+// Java.util.Iterable
+iterator(); // Zwraca obiekt iteratora dla danej kolekcji
+```
+---
+
+```java
+public class IterableRange implements Iterable<Integer> {
+	private int start, stop;
+
+	public IterableRange(int start, int stop) {
+		this.start = start;
+		this.stop = stop;
+	}
+
+	@Override
+	public Iterator<Integer> iterator() {
+		return new Iterator<Integer>() {
+
+			private int current = start;
+			
+			@Override
+			public boolean hasNext() {
+				return current <= stop;
+			}
+
+			@Override
+			public Integer next() {
+				if (!hasNext())
+					throw new NoSuchElementException();
+				return current++;
+			}
+		}
+	}
+}
 ```
 
--   coś, co **jest Circle lub wyżej (Figure, Object)**
--   **wkładam Circle**, **czytam (Object)**
--   **Consumer → Super**
-    
+```java
+// Main.java
 
-### PECS = Producer Extends, Consumer Super
+for (int i new IterableRange(5, 12))
+	System.out.println("val: " + i);
 
-| Akcja 		| Użyj 	| 	Co robi |
-| ---				|---		| ---			|
-| Czytam | `? extends T` | nie wkładam |
-| Wkładam | `? super T` | czytam jako Object |
+Iterator<Integer> it = (new IterableRange(5, 12)).iterator();
+
+while (it.hasNext()) {
+	int val = it.next();
+	System.out.println("val2: " + val);
+}
+```
