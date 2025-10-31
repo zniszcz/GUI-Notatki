@@ -607,3 +607,608 @@ while (it.hasNext()) {
 	System.out.println("val2: " + val);
 }
 ```
+
+## GUI_PL_11.01 Wprowadzenie do przetwarzania strumieniowego
+
+- Strumienie nie modyfikują źródła danych.
+- Operacja terminalna triggeruje operacje pośrednie do wykonania. To ta operacja która kończy przetwarzanie strumienia i zwraca wynik nie strumieniowy (albo efekt uboczny).
+- Short circuting (krótkie zwarcie) - operacja która nie musi przejść całego strumienia, kończy wcześniej gdy spełni warunek albo weźmie tylko część danych.
+
+```java
+List<Integer> nums = List.of(1, 2, 3, 4);
+boolean hasBig = nums.stream().anyMatch(n -> n > 2); // zatrzyma się na 3
+```
+- Operacje strumieniowe dzielą się na **statefull** i **stateless** w zależności od tego czy mają stan (jeżeli element N będzie wiedział o N-1 to jest stanowe)
+- Stanowe w bibliotece podstawowej to:
+	- `sorted()` - buforuje całość żeby posortować
+	- `distinct()` - pamięta już widziane elementy, by usuwać duplikaty.
+	- `limit(n)` - liczy, ile już zwrócono (short-circut)
+	- `skip(n)` - liczy, ile pominąć zanim zacznie zwracać
+
+## GUI_PL_11.02 Tworzenie strumieni
+```java
+collection.stream(); // -> zwróci stream z kolekcji
+list.stream(); // -> list to przykład kolekcji
+```
+analogicznie działa statyczna metoda `Stream.of()` na klasie Stream:
+
+```java
+Stream.of(collection); // -> zwróci stream z kolekcji collection
+Stream.of(array);
+Stream.of("val1", "val2", "val3");
+```
+
+- `Stream.generate` i `Stream.iterate`:
+```java
+Stream<Double> stream1 = Stream.generate(Math::random);
+Stream<Integer> stream2 = Stream.iterate(1, n -> n + 3);
+```
+
+- `IntStream`:
+```java
+IntStream stream3 = IntStream.range(1, 5); // -> zwróci od 1 do 4
+IntStream stream4 = IntStream.rangeClosed(1, 5); // -> od 1 do 5
+```
+
+- Strumienie z pliku
+```java
+try (Stream<String> stream5 = Files.lines(Path.of("file.txt"))) {
+	// ...
+} catch (Exception ex) {
+	e.printStackTrace();
+}
+```
+
+- Strumienie z wyrażeń regularnych:
+```java
+String text = "Alice has AIDS";
+Stream<String> stream9 = Pattern.compile("\\s").splitAsStream(text);
+```
+
+## GUI_PL_11.03 Operacje na strumieniach
+
+- `Stream<T> filter(Predicate<T> pred)`:
+
+```java
+Stream.of(1, 2, 3, 4, 5, 6)
+	.filter(x -> x % 2 == 0)
+	.forEach(System.out::println);
+```
+
+- `Stream<R> map(Function<T, R> fun)`:
+
+```java
+Stream.of("Python", "Java", "C++")
+	.map(String::toUpperCase)
+	.forEach(System.out::println);
+```
+
+- `Stream<T> distinct()`:
+
+```java
+Stream.of(1, 2, 2, 3, 3, 4, 5)
+	.distinct() // Uważaj, to nie jest zbyt optymalne bo jest statefull
+	.forEach(System.out::println);
+```
+
+- `Stream<R> flatMap(Function<T, Stream<R>> fun)`:
+
+Zwraca strumień strumieni a potem go spłaszcza.
+
+```java
+Stream.of("a b", "c d e")
+	.flatMap(s -> Stream.of(s.split(" ")))
+	.forEach(System.out::println);
+```
+
+- `Stream<T> sorted(Comparator<T> cmp)`:
+
+```java
+Stream.of("pear", "apple", "orange")
+	.sorted()
+	.forEach(System.out::println);
+```
+
+- `Stream<T> peek(Consumer<T> cons)`:
+
+```java
+Stream.of(1, 2, 3)
+	.peek(x -> System.out.println("Before change: " + x))
+	.map(x -> x*2)
+	.forEach(System.out::println);
+```
+
+## GUI_PL_11.04 Operacje terminalne
+
+```
+.count() - liczy sumę
+.min() - zwraca minimalny element, trzeba przekazać komparator
+chociażby Integer::compareTo
+.max() - zwraca maksymalną
+.collect() - zwraca kolekcję
+.collect(Collectors.toList());
+.toArray() - zwraca array
+.groupingBy() - grupuje według klucza
+.joining() - zwraca stringa z konkatenacją
+.toList() - zwraca listę stringów
+.allMatch() - przyjmuje funkcję, zwraca czy każdy element ją spełnia
+.anyMatch() - czy cokolwiek spełnia
+.noneMatch() - czy żaden nie spełnia
+```
+
+```java
+int min = Stream.of(3, 7, 2, 5, 7).min(Integer::compareTo).get();
+
+Map<Character, List<String>> map = Stream.of("java", "python", "C++", "rust)
+	.collect(Collectors.groupingBy(s -> s.charAt(0)));
+
+System.out.println(map);
+
+String text = Stream.of("java", "python", "C++", "rust")
+	.collect(Collectors.joining(", "));
+```
+
+- jest jeszcze `reduce`:
+
+```java
+int sum = Stream.of(1, 2, 3, 4).reduce(0, Integer::sum);
+int product = Stream.of(1, 2, 3, 4).reduce(1, (a, b) -> a * b);
+int count = Stream.of(1, 2, 3, 4).reduce(0, (a, b) -> a+1);
+```
+
+## GUI_PL_12.01 Wprowadzenie do predefiniowanych interfejsów funkcyjnych
+
+- Mieszkają w `java.util.function`.
+- Najczęstszy podział:
+	- Konsumenci (consumers)
+	- Funkcje (functions)
+	- Operatory (operators)
+	- Predykaty (predicats)
+	- Dostawcy (supliers)
+s
+## GUI_PL_12.02 Konsumenci
+
+- Przyjmują argument ale niczego nie zwracają.
+- Celem są side effecty.
+- Podstawowa implementacja to `Consumer<T>`:
+
+```
+Consumer<T>
+void accept(T t)
+```
+
+```java
+Consumer<String> printer = s -> System.out.println("Hello, " + s + "!");
+
+printer.accept("Java");
+printer.accept("World");
+
+Consumer<String> length = s -> System.out.println("Length: " + s.length());
+
+printer.andThen(length).accept("Lambda");
+
+// BiConsumer<T, U> - przyjmuje dwa argumenty ale nic nie zwraca
+// 		void accept(T t, U u)
+
+BiConsumer <String, Integer> repeat = (word, times) -> {
+	for (int i = 0; i < times; i++) {
+		System.out.print(word + " ");
+	}
+	System.out.println();
+};
+
+repeat.accept("Java", 3); // -> wyświetli Java Java Java \n
+```
+
+## GUI_PL_12.03 Funkcje
+
+- Wykonuje jakąś operację przekształcenia.
+
+```java
+// Function<T, R>
+// 		R apply(T)
+
+Function <Integer, String> intToString = i -> "Liczba: " + i;
+Function <String, Integer> stringLength = s -> s.length();
+
+System.out.println(intToString.apply(10));
+System.out.println(stringLength.apply("Java"));
+
+Function<Integer, Integer> square = x -> x * x;
+Function<Integer, String> describe = x -> "Wynik to: " + x;
+
+System.out.println(square.andThen(describe).apply(5));
+System.out.println(describe.compose(square).apply(5));
+// -- oba powyższe dadzą ten sam wynik, ale mają odwrotną kolejność wykonywania operacji
+
+// Jest też wersja dla typów prymitywnych jak IntFunction, DoubleFunction etc.
+// IntToDoubleFunction, LongToDoubleFunction etc. też.
+
+// BiFunction<T, U, R>
+// 		R apply(T t, U u)
+
+BiFunction<Integer, Integer, String> sumToText = (a, b) -> "Sum: " + (a + b);
+BiFunction<String, Integer, String> repeat = (text, times) -> text.repeat(times);
+
+System.out.println(sumToText.apply(3, 4));
+System.out.println(repeat.apply("Hi", 3));
+```
+
+## GUI_PL_12.04 Operatory
+
+- Operator to funkcja która przyjmuje jedną lub dwie wartości danego typu i zwraca wynik tego samego typu.
+- Dzielą się na `unary`(przyjmujące jedną wartość) i `binary`(przyjmujący dwie) .
+```java
+// UnaryOperator<T>
+
+UnaryOperator<Integer> square = x -> x * x;
+UnaryOperator<Double> halve = x -> x / 2.0;
+UnaryOperator<String> exclain = x -> x + "!";
+
+System.out.println(square.apply(5));
+System.out.println(halve.apply(5.0));
+System.out.println(exclain.apply("Java"));
+
+/* Są też dedykowane:
+
+	- IntUnaryOperator
+	- LongUnaryOperator
+	- DoubleUnaryOperator.applyAsInt();
+	
+*/
+
+// BinaryOperator<T>
+
+BinaryOperator<Integer> add = (a, b) -> a + b;
+BinaryOperator<String> concat = (a, b) -> a + b;
+BinaryOperator<Double> max = (a, b) -> Math.max(a, b);
+
+System.out.println(add.apply(3, 4));
+System.out.println(concat.apply("Hello ", "World"));
+System.out.println(max.apply(2.5, 4.1));
+
+/* Są też dedykowane:
+
+	- IntBinaryOperator
+	- LongBinaryOperator
+	- DoubleBinaryOperator
+
+*/
+```
+
+- W przypadku interfejsu `BinaryOperator` mamy dwie metody statyczne:
+	- `.maxBy()` - przyjmuje komparator i zwraca operator wybierający **większy** element.
+	- `.minBy()` - analogicznie – mniejszy.
+
+```java
+Comparator<Integer> cmp = Integer::compare;
+
+BinaryOperator<Integer> minBy = BinaryOperator.minBy(cmp);
+BinaryOperator<Integer> maxBy = BinaryOperator.maxBy(cmp);
+
+System.out.println(minBy.apply(5, 9));
+System.out.println(maxBy.apply(5, 9));
+```
+
+## GUI_PL_12.05 Predykaty
+
+- Funkcje które sprawdzają wartości logiczne i zwracają `true` lub `false`.
+- Nie ma metody `apply` tylko `test`.
+
+```java
+Predicate<Integer> isEven = x -> x % 2 == 0;
+Predicate<String> isLongWord = x -> x.length() > 5;
+
+System.out.println(isEven.test(4));
+System.out.println(isEven.test(7));
+
+System.out.println(isLongWord.test("Stream"));
+System.out.println(isLongWord.test("Java"));
+
+
+// Łączenie predykatów:
+
+Predicate<Integer> isPositive = x -> x > 0;
+
+Predicate<Integer> oddOrNegative = isEven
+	.negate()
+	.or(isPositive.negate());
+
+System.out.println(oddOrNegative.test(-3));
+System.out.println(oddOrNegative.test(3));
+System.out.println(oddOrNegative.test(4));
+
+/*	Defaulty:
+
+		- IntPredicate
+		- LongPredicate
+		- DoublePredicate
+	
+*/
+
+// BiPredicate<T, U> -> boolean
+
+BiPredicate<Integer, Integer> isDivisibleBy = (a, b) -> a % b == 0;
+
+System.out.println(isDivisibleBy.test(10, 5));
+System.out.println(isDivisibleBy.test(10, 3));
+```
+
+## GUI_PL_12.06 Dostawcy
+
+- Funkcja bez argumentów, która zwraca wartość jakiegoś zdefiniowanego typu:
+- Posiada jedynie metodę `get()`
+
+```java
+Supplier<String> greeting = () -> "Hello Java!";
+Supplier<Integer> constant = () -> 42;
+Supplier<Double> random = () -> Math.random();
+
+System.out.println(greeting.get());
+System.out.println(constant.get());
+System.out.println(random.get());
+
+/* 
+
+	Defaulty:
+		- IntSupplier
+		- LongSupplier
+		- DoubleSupplier
+		- BooleanSupplier
+etc.
+
+mają też:
+ .getAsInt();
+etc.
+*/
+
+Supplier<LocalTime> timeSuplier = () -> LocalTime.now();
+
+System.out.println(timeSupplier.get());
+System.out.println(timeSupplier.get());
+System.out.println(timeSupplier.get());
+```
+
+## GUI_PL_13.01 Wielowątkowość - Tło historyczne
+
+- Każdy wątek ma swój stos, ale wszystkie mają jedną przestrzeń adresową.
+
+## GUI_PL_13.02 Wielowątkowość - Tworzenie wątków
+
+- Wątki są reprezentowane przez klasę `Thread`.
+- Są dwa sposoby tworzenia nowej instancji:
+	- Dziedziczymy po `Thread` i uzupełniamy ciało metody `run()`. Uruchomiamy poprzed stworzenie instancji i wywołanie metody `start()`.
+	- Wykorzystując interfejs `Runnable` i przekazując go do klasy `Thread`.
+
+```java
+
+// MyThread.java
+
+public class MyThread extends Thread {
+	@Override
+	public void run() {
+		for (int i = 0; i < 10 ; i++)
+			System.out.println("Pierwszy wątek " + i);
+	}
+}
+
+// MyRunnable.java
+
+public class MyRunnable implements Runnable {
+	
+	@Override
+	public void run() {
+		for (int i = 0; i < 10; i++) {
+			System.out.println("Drugi wątek " + i);
+		}
+	}
+}
+
+// Main.java
+
+public class Main {
+	public static void main(String[] args) {
+	
+		// Sposób 1.
+		MyThread myThread = new MyThread();
+		myThread.start();
+
+		// Sposób 2.
+		MyRunnable myRunnable = new MyRunnable();
+		Thread thread = new Thread(myRunnable);
+		thread.start();
+
+		// lub anonimowo:
+		Thread t3 = new Thread(() -> {
+			for (int i = 0; i < 10; i++) {
+				System.out.println("Trzeci wątek " + i);
+			}
+		});
+	}
+}
+```
+
+## GUI_PL_13.03 Wielowątkowość wykonywanie wątków, stany i priorytety
+
+- Stany sprawdzamy poprzez `Thread.state`
+- Stany wątków:
+	- `NEW` - po utworzeniu
+	- `RUNNABLE` - wykonywany wątek
+	- Stany końcowe:
+		- `TERMINATED` - wykonany wątek
+		- `WAITING` - czeka na zasoby lub jest wywłaszczony
+			- `wait` - wywołano: `wait`, `join` lub `park` 
+			- `notify` -
+		- `BLOCKED` - wątek jest zablokowany
+			- `lock acquired` - zablokuj wątek
+			- `lock released` - odblokuj wątek (zmieni stan na `RUNNABLE`)
+		- `TIMED_WAITING` - analogiczny do `WAITING` ale z maksymalny limit czasu 
+			- `wait(time)`
+			- `notify or timeout`
+
+---
+
+- Wątki mają priorytety wykonania. Można modyfikować priorytety metodą `Thread.setPriority()`. Implementacja zależy od systemu operacyjnego.
+- Wątek ma flagę oznaczającą czy jest przerwany czy nie - ale to jest niezależne i niezautomatyzowane.
+
+## GUI_PL_13.04 Wielowątkowość - Synchronizacja i oczekiwanie na wątki
+
+```java
+// NonSyncThread.java
+
+public class NonSyncThread extends Thread {
+	public static int value = 4000000;
+
+	@Override
+	public void run() {
+		for (int i = 0; i < 1000000; i++) {
+			value--;
+		}
+	}
+}
+
+// Main.java
+
+public class Main {
+	public static void main(String[] args) {
+		Thread nonSyncThread1 = new NonSyncThread();
+		Thread nonSyncThread2 = new NonSyncThread();
+		Thread nonSyncThread3 = new NonSyncThread();
+
+		nonSyncThread1.start();
+		nonSyncThread2.start();
+		nonSyncThread3.start();
+
+		try {
+			nonSyncThread1.join();
+			nonSyncThread2.join();
+			nonSyncThread3.join();
+		} catch (InterruptedException ex) {
+			ex.printStackTrace();
+		}
+
+		System.out.println(NonSyncThread.value); 
+			// Zwróci jakąś losową wartość bo są nie synchronizowane
+			// Nastąpiło **szamotanie wartości** (Race Condition)
+	}
+}
+```
+
+- Do synchronizacji można użyć monitora stanu wątku. Są dwa sposoby:
+	- przez blok synchronizacyjny
+```java
+// Main.java, public static void main() {
+
+synchronized (monitor) {
+	// instrukcje
+}
+```
+
+```java
+// SyncThread.java
+
+public class SyncThread extends Thread {
+	public static int value = 4000000;
+	public static String monitor = new String();
+
+	@Override
+	public void run() {
+		for (int i = 0; i < 1000000; i++) {
+			synchronized(monitor) {
+				value--;
+			}
+		}
+	}
+}
+```
+
+	- przez metodę synchronizacyjną:
+
+```java
+// W klasie wątku:
+
+public synchronized void nazwaMetody() {
+	// instrukcje
+}
+```
+
+```java
+// SyncThread2.java
+
+public class SyncThread2 extends Thread {
+	public static int value = 4000000;
+	public static String monitor = new String();
+
+	@Override
+	public void run() {
+		for (int i = 0; i < 1000000; i++) {
+			decrement();
+		}
+	}
+
+	// chcę możliwie najmniejszy kawałek kodu wyciągnąć do metody
+	// to się nazywa sekcja krytyczna
+	public synchronized static int decrement() {
+		return value--;
+	}
+}
+```
+
+- `.join()` czeka aż się skończy podwątek
+- można odpalić `.join()` żeby czekał tylko jakiś czas
+- można wykonać na wątku metodę `.wait()` żeby wrzucić go do stanu waiting albo `.sleep(interval)` żeby do timed_waiting
+
+## GUI_PL_13.05 Wielowątkowość - Zatrzymywanie wątków
+- korzystamy z metody `.interrupt()` - zostanie przerwany i flaga `isInterrupted` zostanie ustawiona na `true`
+
+```java
+// MyThread2.java
+public class MyThread2 extends Thread {
+	public int value = 1;
+
+	@Override
+	public void run() {
+		while (!Thread.interrupted()) {
+
+			// brak tego try wywaliłby wyjątek i nie przerwał działania podczas oczekiwania
+			try { 
+				Thread.sleep(1000); // Wykonujemy co 1s
+			} catch (InterruptedException ex) {
+				return;
+			}
+
+			value++;
+		}
+	}
+}
+
+// Main.java
+public class Main {
+	public static void main(String[] args) {
+		MyThread2 myThread2 = new MyThread2();
+
+		myThread2.start();
+		
+		try {
+		Thread.sleep(10000); // czekamy na 10s żeby było widać wynik
+		} catch (InterruptedException ex) {
+			ex.printStackTrace();
+		}
+
+		myThread2.interrupt();
+		System.out.println();
+	}
+}
+```
+
+## GUI_PL_13.06 Wielowątkowość - Najczęstsze problemy współbierzności
+
+- Podstawowe problemy:
+	- **Race condition** - dwa lub więcej wątków uzyskuje dostęp do wspólnego zasobu, a wynik zależy od kolejności wywołania
+	- **Interferencja wątków** - dwa lub więcej wątków uzyskują dostęp do wspólnego zasobu i zakłócają się nawzajem
+	- **Błędy w spójności pamięci** - jeżeli jest problem z synchronizacją
+	- **Zakleszczenie** - jakieś wątki wzajemnie czekają na swój wynik
+	- **LiveLock** - odwrotność zakleszczenia - ciągle zmieniają wartość czekając na siebie
+	- **Zagłodzenie wątków** - cały czas są wątki z wyższym priorytetem
+- Rozwiązania:
+	- Używanie managera wątków - np. `ConcurencyAPI` i w nim `ExecutorService`.
