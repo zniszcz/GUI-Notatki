@@ -1190,7 +1190,7 @@ public class Main {
 		myThread2.start();
 		
 		try {
-		Thread.sleep(10000); // czekamy na 10s żeby było widać wynik
+			Thread.sleep(10000); // czekamy na 10s żeby było widać wynik
 		} catch (InterruptedException ex) {
 			ex.printStackTrace();
 		}
@@ -1212,3 +1212,679 @@ public class Main {
 	- **Zagłodzenie wątków** - cały czas są wątki z wyższym priorytetem
 - Rozwiązania:
 	- Używanie managera wątków - np. `ConcurencyAPI` i w nim `ExecutorService`.
+
+## GUI_PL_14.01 Wprowadzenie do Swing'a
+
+- **AWT** - *Abstract Window Toolkit* to biblioteka ciężkich komponentów:
+	- importuje się go z `java.awt`
+	- używa **ciężkich komponentów** czyli takich bazowanych na UI systemu (różne na różnych platformach)
+- **Swing**
+	- importuje się go z `javax.swing`
+	- używa **lekkich komponentów** czyli takich napisanych od zera, niezależnych od platformy (z wyjątkiem `JFrame`, `JApplet`, `JWindow`)
+	- jest nieznacznie wolniejszy ze względu na to, że komponenty są pisane od zera
+	- jego komponenty dziedziczą po `JComponent`
+
+---
+Ponadto:
+	- Niektóre klasy (np. `Font` czy `Color`) są współdzielone
+	- `ContentPain` to taki kontener na zawartość
+	- Zarządcy rozkładu definiują jak komponenty będą rozłożone na oknie
+	- Za interakcje odpowiadają zdarzenia ale więcej będzie o nich przy okazji *Delegacyjnego Modelu Zdarzeń*
+
+## GUI_14.02 Tworzenie i obsługa okien
+
+- metoda `pack()` ustawia rozmiar okna na najmniejszy który pomieści jego zawartość
+- metoda `setSize(x, y)` ustawia konkretny rozmiar okna
+- To co ma zostać wyrenderowane musi być widoczne z wątku **EDT** (*Event Dispatching Thread*). W przeciwnym wypadku możemy dopuścić do zakleszczenia. Dbamy o to wywołując główne okno używając `SwingUtilities.invokeLater()`.
+- *EDT* obsługuje:
+	- zdarzenia
+	- rysowanie komponentów
+	- wywołanie listenerów
+
+```java
+// MyFrame.java
+import javax.swing.*;
+
+public class MyFrame extends JFrame {
+	public MyFrame() {
+		// można nadpisać jak ten panel ma wyglądać
+		JPanel panel = new JPanel(){
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+
+				int width = getWidth()-1;
+				int height = getHeight()-1;
+
+				for (int i = 10; i < width / 2; i += 10) {
+					int w = width - i * 2;
+					int h = height - i * 2;
+					g.drawRect(i, i, w, h);
+				}
+			}
+		};
+
+		add(panel);
+		setSize(200, 200);
+		setLocationRelativeTo(null); // wyśrodkowuje okno
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true); // trzeba je wyświetlić
+	}
+}
+```
+
+```java
+// Main.java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				new MyFrame();
+			}
+		});
+	}
+}
+```
+
+## GUI_14.03 Layout Managers
+
+- Trzy podstawowe Layout Managery:
+	- `FrameFlowLayout` - podstawowy layout
+	- `GridLayout` - tabelaryczny do danych
+	- `BorderLayout` - tabelaryczny
+
+```java
+// Main.java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				new MyFrameFlowLayout();
+				// new MyFrameGridLayout();
+				// new MyFrameBorderLayout();
+			}
+		});
+	}
+}
+```
+
+### `FlowLayout`
+
+```java
+import javax.swing.*;
+
+public class MyFrameFlowLayout extends JFrame {
+	public MyFrameFlowLayout(){
+		JPanel jPanel = new JPanel();
+
+		JButton b1 = new JButton("Button 1");
+		JButton b2 = new JButton("Button 2");
+		JButton b3 = new JButton("Button 3");
+		JButton b4 = new JButton("Button 4");
+		JButton b5 = new JButton("Button 5");
+
+// 			// Domyślne:
+		jPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+// 			// Wyrównane do lewej: 
+//		jPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+//			// Też dorównane do lewej
+//		jPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
+//			// Do prawej
+//		jPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+//			// Do prawej
+//		jPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
+
+// 			// Można przekazać też hgap i vgap 
+// 			// czyli marginesy wewnętrzne między elementami:
+// 		new FlowLayout(FlowLayout.CENTER, 50, 100);
+
+		jPanel.add(b1);
+		jPanel.add(b2);
+		jPanel.add(b3);
+		jPanel.add(b4);
+		jPanel.add(b5);
+
+		add(jPanel);
+
+		setSize(1000, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### `GridLayout`
+
+```java
+	// Domyślnie kolumn jest tyle ile elementów i jeden wiersz
+	// Wypełniają całe okno
+	jPanel.setLayout(new GridLayout());
+
+	// 2 lub 4 wartości przyjmuje konstruktor
+	// rows, cols
+	// rows, cols, hgap, vgap 
+```
+
+
+### `BorderLayout`
+
+```java
+	// Domyślnie każdy komponent wypełnia sekcję w całości
+	// Więc widoczny będzie tylko ostatni bo nadpisze poprzednie
+	// Ale w tym wypadku konstruktor i tak zostaje pusty
+	// Konfigurujemy layout metodą `.add()`
+	jPanel.setLayout(new BorderLayout());
+
+	// Stara notacja to kierunki świata
+	// jPanel.add(b2, BorderLayout.NORTH); // Góra 
+	jPanel.add(b3, BorderLayout.PAGE_START); // Góra
+	jPanel.add(b4, BorderLayout.PAGE_END); // Dół
+	jPanel.add(b5, BorderLayout.LINE_START); // Lewo
+	jPanel.add(b1, BorderLayout.LINE_END); // Prawo
+	jPanel.add(b1, BorderLayout.CENTER);
+
+	// Jeżeli chcę dodać kilka elementów w jednej
+	// sekcji to muszę zagnieździć jPanele
+```
+
+## GUI_14.04 Ogólnie o komponentach i kontenerach
+
+- Kontenery to komponenty, które mogą zawierać inne. Zwykle mają domyślny `LayoutManager`, ale mogą też działać bez niego (`null`).
+- Interakcje komponentów z użytkownikiem są obsługiwane za pomocą zdarzeń.
+- *Komponenty lekkie* mogą być przezroczyste.
+- W przypadku Swinga mamy do dyspozycji skórki - `PluggableLookAndFeel`.
+- W przyciskach możemy definiować Mnemoniki czyli Alt-kliknięcia (kliknięcie przycisku z altem).
+- Możemy używać HTMLa do osadzenia w komponentach.
+- Walidację pól tekstowych można wprowadzić za pomocą dziedziczenia po klasie abstrakcyjnej `InputVerifier`. Musimy zdefiniować metodę `verify(String text)`.
+- Jeżeli pozycjonuję element za pomocą `setLocationRelativeTo()`, to muszę pamiętać, że punkt (0,0) okna leży w lewym górnym rogu okna, wartości rosną w dół i w prawo.
+- Komponenty możemy blokować lub odblokowywać (`setEnabled(boolean state)`).
+- W przypadku komponentów `visible` jest domyślnie na `true` (w przeciwieństwie do okien), ale możemy ustawić je na `false`.
+- `JLabel` domyślnie jest przezroczysta (nie ma tła). Reszta komponentów domyślnie nie jest przezroczysta.
+- Żeby ustawić kolor tła w `JLabel` musimy wykonać `setOpaque(true)` żeby wyłączyć przezroczystość.
+
+---
+
+- Komponenty które będziemy omawiać:
+	- Przyciski – możemy na nich definiować tekst lub ikony (mogą być różne ikony dla różnych stanów - np. hover, clicked, focus, unfocus). Mamy metodę `doClick()` która symuluje kliknięcie (odpowiednik `triggerClick()`).
+		- `JButton` - domyślny przycisk
+		- `JToggleButton` - przycisk przełączalny (włączony / wyłączony)
+		- `JCheckbox` - definiuje grupę checkboxów
+		- `JRadioButton` - definiuje grupę radiobuttonów
+	- Menu rozwijane (dziedziczy po przyciskach):
+		- `JMenu`
+		- `JMenuItem`
+		- `JCheckboxMenuItem`
+		- `JRadioMenuItem`
+		- `JPopupMenu` - menu kontekstowe (right-click)
+	- Suwaki - `JSlider`
+	- Dialogi wyboru:
+		- `JColorChooser` - wybór koloru
+		- `JFileChooser` - wybór pliku
+	- Pola edycyjne (posiadają walidację)
+		- `JTextField` - jednowierszowe pole
+		- `JTextArea` - wielowierszowe pole
+		- `JPasswordField`
+		- `JFormattedTextField` - posiada wbudowany walidator
+		- `JTextComponent`
+		- `JEditorPane`
+		- `JTextPane`
+	- Listy (wymagają MVC)
+		- `JList` - Listy
+		- `JComboBox` - Listy rozwijalne
+		- `JTable` - Tabele
+		- `JTree` - Drzewa
+	- Kontenery
+		- `JPanel` - prosty kontener
+		- `JSplitPanel` - podział pionowy lub poziomy
+		- `JTabbedPane` - podział na taby
+		- `JScrollPane` - skrolowalny kontener
+		- `JToolBar` - pasek narzędzi
+
+## GUI_PL_14.05 Przegląd podstawowych komponentów
+
+### Plik w którym wywołujemy demka:
+
+```java
+// Main.java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				// tu tworzymy instancję tego frejma którego
+				// chcemy przetestować i odpalić:
+				new JButtonFrame();
+				// ...
+			}
+		});
+	}
+}
+```
+
+### JButton:
+
+![Wygląd JButton przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20221209210416/RB1.jpg)
+
+```java
+import javax.swing.*;
+
+public class JButtonFrame extends JFrame {
+	public JButtonFrame() {
+
+		JButton jButton = new JButton("Sladan daj spokoj...");
+
+		jButton.setTooltipText("Tekst po najechaniu na przycisk");
+		jButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				jButton.setText("kurwa...");
+				
+				if (jButton.getBackground() == Color.GREEN) {
+					jButton.setBackgroundColor(Color.ORANGE);
+				} else {
+					jButton.setBackgroundColor(Color.GREEN);
+				}
+			}
+		});
+
+		// shorthand:
+		// jButton.addActionListener((e) -> { /* ... */ });
+
+		add(jButton);
+
+		pack();
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JCheckBox:
+
+![Wygląd JCheckBox przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1-139.png)
+
+```java
+import javax.swing.*;
+
+public class JCheckboxFrame extends JFrame {
+	public JCheckboxFrame() {
+
+		JCheckBox jCheckBox1 = new JCheckBox("CheckBox 1");
+		JCheckBox jCheckBox2 = new JCheckBox("CheckBox 2");
+		JCheckBox jCheckBox3 = new JCheckBox("CheckBox 3"); 
+
+		jCheckBox2.setSelected(true);
+		
+		ItemListener itemListener = new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				Object source = e.getItemSelectable(); // -> Object, źródło zdarzenia
+				if (source == jCheckBox1)
+					jCheckBox1.setText(jCheckBox1.getText() + "+");
+				else if (source == jCheckBox2)
+					jCheckBox2.setText(jCheckBox1.getText() + "-");
+				else (source == jCheckBox3)
+					jCheckBox3.setText(jCheckBox1.getText() + "*");
+
+				if(e.getStateChange() == ItemEvent.SELECTED)
+					System.out.println("Selected");
+				else
+					System.out.println("Deselected");
+			}
+		};
+
+		jCheckBox1.addItemListener(itemListener);
+		jCheckBox2.addItemListener(itemListener);
+		jCheckBox3.addItemListener(itemListener);
+
+		// Mnemonic to jest shortcut do odpalenia eventu domyślnego (selected)
+		jCheckBox1.setMnemonic(KeyEvent.VK_C);
+		jCheckBox2.setMnemonic(KeyEvent.VK_D);
+		jCheckBox3.setMnemonic(KeyEvent.VK_E);
+
+		setLayout(new FlowLayout()); // domyślnie jest border
+
+		add(jCheckBox1);
+		add(jCheckBox2);
+		add(jCheckBox3);
+
+		pack();
+		setSize(200, 200);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JRadioButton:
+
+![Wygląd JRadioButton przykłady](https://media.geeksforgeeks.org/wp-content/uploads/Screenshot-30-1.png)
+```java
+import javax.swing.*;
+
+public class JRadioButtonFrame extends JFrame {
+	public JRadioButtonFrame() {
+
+		JRadioButton jRadioButton1 = new JRadioButton("Sladan plz 1");
+		JRadioButton jRadioButton2 = new JRadioButton("Sladan plz 2");
+		JRadioButton jRadioButton3 = new JRadioButton("Sladan plz 3");
+
+		ActionListener actionListener = new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println(
+					((JRadioButton)e.getSource()).getText()
+				);
+			}
+		};
+
+		jRadioButton1.addActionListener(actionListener);
+		jRadioButton2.addActionListener(actionListener);
+		jRadioButton3.addActionListener(actionListener);
+
+		jRadioButton1.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// SELECTED ma wartość 1 a DESELECTED 2
+				System.out.println(e.getStateChange());
+			}
+		});
+
+		// Żeby dało się zaznaczyć tylko
+		// jedną opcję potrzebny ButtonGroup
+		ButtonGroup buttonGroup = new ButtonGroup();
+		buttonGroup.add(jRadioButton1);
+		buttonGroup.add(jRadioButton2);
+		buttonGroup.add(jRadioButton3);
+		// Jak to pominę to wyświetlą się ok, 
+		// ale będą w pełni niezależne
+
+		setLayout(new FlowLayout());
+
+		add(jRadioButton1);
+		add(jRadioButton2);
+		add(jRadioButton3);
+
+		// pack();
+		setSize(200, 200);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JLabel:
+
+![Wygląd JLabel przykłady](https://media.geeksforgeeks.org/wp-content/uploads/4000.png)
+
+```java
+import javax.swing.*;
+
+public class JLabelFrame extends JFrame {
+	public JLabelFrame() {
+
+		JLabel jLabel1 = new JLabel("Kurwa..1");
+		JLabel jLabel2 = new JLabel("Kurwa...................1");
+		JLabel jLabel3 = new JLabel("Kurwa Mać");
+
+		jLabel1.setBackground(Color.GREEN);
+		jLabel1.setOpaque(true);
+		jLabel1.setFont(new Font("Courier", Font.BOLD, 12));
+
+		jLabel2.setIcon(new ImageIcon("ok.png"));
+
+		jLabel3.setText("<html><h1><i>AaaaAaaAaAa</i></h1></html>");
+
+		setLayout(new FlowLayout());
+
+		add(jLabel1);
+		add(jLabel2);
+		add(jLabel3);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JTextField:
+
+![Wygląd JTextField przykłady](https://media.geeksforgeeks.org/wp-content/uploads/150.png)
+```java
+import javax.swing.*;
+
+public class JTextFieldFrame extends JFrame {
+	public JTextFieldFrame() {
+
+		JTextField jTextField = new JTextField();
+
+		jTextField.setBackground(Color.GREEN);
+		jTextField.setForeground(Color.BLUE);
+
+		Font f = new Font("Times New Roman", Font.BOLD , 24);
+		jTextField.setFont(f);
+
+		setLayout(new FlowLayout());
+
+		add(jTextField);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JTextArea:
+
+![Wygląd JTextArea przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1900.png)
+
+```java
+import javax.swing.*;
+
+public class JTextAreaFrame extends JFrame {
+	public JTextAreaFrame() {
+
+		// Domyślnie nie będzie posiadał scrolla
+		// trzeba resizeować
+		//
+		// Dlatego dodajemy ScrollPane
+
+		JTextArea jTextArea = new JTextArea();
+		JScrollPane scrollPane = new JScrollPane(jTextArea);
+
+		// Modyfikacje jak w JTextField
+
+		add(scrollPane);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JSlider:
+
+![Wygląd JSlider przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1-144.png)
+
+```java
+import javax.swing.*;
+
+public class JSliderFrame extends JFrame {
+	public JSliderFrame() {
+
+		JSlider jSlider1 = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+		JSlider jSlider2 = new JSlider(JSlider.VERTICAL, 0, 100, 50);
+
+		// Major & Minor tick
+		jSlider1.setMajorTickSpacing(50);
+		jSlider1.setMinorTickSpacing(20);
+		jSlider1.setPaintTicks(true);
+		jSlider1.setPaintLabels(true); // Tylko dla Major
+
+		jSlider.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				System.out.println(((JSlider) e.getSource()).getValue());
+			}
+		});
+
+		setLayout(new FlowLayout());
+
+		add(jSlider1);
+		add(jSlider2);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JSplitPane:
+
+![Wygląd JSlider przykłady](https://media.geeksforgeeks.org/wp-content/uploads/2-94.png)
+
+```java
+import javax.swing.*;
+
+public class JSplitPaneFrame extends JFrame {
+	public JSplitPaneFrame() {
+
+		JPanel jPanel1 = new JPanel();
+		JPanel jPanel2 = new JPanel();
+
+		jPanel1.setBackground(Color.BLUE);
+		jPanel2.setBackground(Color.GREEN);
+
+		JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jPanel1, jPanel2);
+
+		jSplitPane.setOneTouchExpandable(true); // Pokazuje szczałki
+
+		jSplitPane.setDividerLocation(150);
+
+		add(jSplitPane);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JTabbedPane:
+
+![Wygląd JTabbedPane przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20231020114339/cap1.PNG)
+
+```java
+import javax.swing.*;
+
+public class JTabbedPaneFrame extends JFrame {
+	public JTabbedPaneFrame() {
+
+		JPanel jPanel1 = new JPanel();
+		JPanel jPanel2 = new JPanel();
+		JPanel jPanel3 = new JPanel();
+
+		jPanel1.setBackground(Color.BLUE);
+		jPanel2.setBackground(Color.GREEN);
+		jPanel3.setBackground(Color.RED);
+
+		JTabbedPane tabbedPane = new JTabbedPane();
+
+		tabbedPane.add("pierwsza", jPanel1);
+		tabbedPane.add("druga", jPanel2);
+		tabbedPane.add("ostatnia", jPanel3);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+### JOptionPane:
+
+![Wygląd JOptionPane przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20231031162134/2.PNG)
+
+```java
+import javax.swing.*;
+
+public class JOptionPaneFrame extends JFrame {
+	public JOptionPaneFrame() {
+
+		JButton button = new JButton("Dupa");
+
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				// ---
+				JOptionPane.showMessageDialog(null, "Hasło to okoń");
+				// pierwszy argument to okno względem którego pozycjonuję
+				// drugi to wiadomość
+				// trzeci argument to tytuł okna (<title>)
+				// czwarty to typ (predefiniowane ikony)
+				// piąty to ikona
+				JOptionPane.showMessageDialog(null, "Hasło to dupa", "dupa", JOptionPane.WARNING_MESSAGE);
+
+				// ---
+				// jak chcę opcje mieć to zmieniam typ:
+				int odpowiedz = JOptionPane.showConfirmDialog(null, "srasz?", "tytuł", JOptionPane.YES_NO_OPTION);
+
+				System.out.println("Odpowiedź to: " + odpowiedz);
+				// ok = 0, no = 1
+
+				// ---
+				String inputUsera = JOptionPane.showInputDialog(null, "Wpisz coś", "Title", JOptionPane.PLAIN_MESSAGE);
+				System.out.println(inputUsera);
+
+				// --- jak chcę własne przyciski to wrzucam array
+				// i jeszcze podaję która jest domyślna 
+				String[] tab = {"Tak", "Nie"};
+				int checkedOption = JOptionPane.showOptionDialog(null, "?", "Title", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, tab, tab[1]);
+				System.out.println(checkedOption);
+
+				// --- kilka opcji robi select boxa
+				// trzeba rzutować na string bo zwraca object
+				String[] tab = {"A", "B", "C"};
+				String s = (String) JOptionPane.showInputDialog(null, "Message", "Title", JOptionPane.PLAIN_MESSAGE, null, tab, tab[0]);
+			}
+		});
+
+		add(jButton);
+
+		// pack();
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
