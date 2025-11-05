@@ -1471,6 +1471,8 @@ public class Main {
 ```
 
 ### JButton:
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JButton.html)
+
 
 ![Wygląd JButton przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20221209210416/RB1.jpg)
 
@@ -1510,6 +1512,8 @@ public class JButtonFrame extends JFrame {
 ```
 
 ### JCheckBox:
+
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JCheckBox.html)
 
 ![Wygląd JCheckBox przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1-139.png)
 
@@ -1569,7 +1573,10 @@ public class JCheckboxFrame extends JFrame {
 
 ### JRadioButton:
 
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JRadioButton.html)
+
 ![Wygląd JRadioButton przykłady](https://media.geeksforgeeks.org/wp-content/uploads/Screenshot-30-1.png)
+
 ```java
 import javax.swing.*;
 
@@ -1627,6 +1634,9 @@ public class JRadioButtonFrame extends JFrame {
 
 ### JLabel:
 
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JLabel.html)
+
+
 ![Wygląd JLabel przykłady](https://media.geeksforgeeks.org/wp-content/uploads/4000.png)
 
 ```java
@@ -1664,7 +1674,10 @@ public class JLabelFrame extends JFrame {
 
 ### JTextField:
 
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JTextField.html)
+
 ![Wygląd JTextField przykłady](https://media.geeksforgeeks.org/wp-content/uploads/150.png)
+
 ```java
 import javax.swing.*;
 
@@ -1693,6 +1706,8 @@ public class JTextFieldFrame extends JFrame {
 ```
 
 ### JTextArea:
+
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JTextArea.html)
 
 ![Wygląd JTextArea przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1900.png)
 
@@ -1724,6 +1739,8 @@ public class JTextAreaFrame extends JFrame {
 ```
 
 ### JSlider:
+
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JSlider.html)
 
 ![Wygląd JSlider przykłady](https://media.geeksforgeeks.org/wp-content/uploads/1-144.png)
 
@@ -1765,6 +1782,8 @@ public class JSliderFrame extends JFrame {
 
 ### JSplitPane:
 
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JSplitPane.html)
+
 ![Wygląd JSlider przykłady](https://media.geeksforgeeks.org/wp-content/uploads/2-94.png)
 
 ```java
@@ -1798,6 +1817,8 @@ public class JSplitPaneFrame extends JFrame {
 
 ### JTabbedPane:
 
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JTabbedPane.html)
+
 ![Wygląd JTabbedPane przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20231020114339/cap1.PNG)
 
 ```java
@@ -1830,6 +1851,8 @@ public class JTabbedPaneFrame extends JFrame {
 ```
 
 ### JOptionPane:
+
+[Oficjalna dokumentacja](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/JOptionPane.html)
 
 ![Wygląd JOptionPane przykłady](https://media.geeksforgeeks.org/wp-content/uploads/20231031162134/2.PNG)
 
