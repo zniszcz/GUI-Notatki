@@ -1911,3 +1911,276 @@ public class JOptionPaneFrame extends JFrame {
 	}
 }
 ```
+
+## GUI_PL_15.01 Wprowadzenie do delegacyjnego modelu zdarzeń
+
+- Eventy są obsługiwane na kolejce FIFO przez *Event Dispatching Thread* (EDT).
+- EDT powinien być jedynym wątkiem obsługującym obsługującym zdarzenia.
+- Wrzucamy do niego zdarzenia za pomocą `invokeLater` (z klasy `SwingUtilities` albo `EventQueue` - to jest ta sama klasa tylko udostępniona w dwóch miejscach).
+- Do obsługi zdarzeń mogą być oddelegowane dowolne EventListenery.
+- Starszym (nie zalecanym) sposobem było `Action` lub `HandleEvent`.
+- Jak chcę dodać kilka listenerów to po prostu wywołuje je jedno po drugim.
+- Listenery dodajemy metodą `addXListener` (ew usuwam przez `removeXListener`) gdzie `X` to jedno z poniższych:
+
+#### Podział:
+- `ActionListener` - zdarzenia generowane na rzecz danego komponentu
+- `AdjustmentListener` - zdarzenia generowane w momencie zmiany stany komponentu
+- `FocusListener` - pole tekstowe staje się aktywne lub przestaje być
+- `ItemListener` - pole wyboru zostaje zaznaczone / odznaczone
+- `WindowListener` - JWindow albo JFrame (maksymalizacja, minimalizacja, zamknięcie okna, przesunięcie okna)
+- `MouseListener` - zdarzenia myszy
+- `MouseMotionListener` - przesunięcie kursora, dragndrop
+- `KeyListener` - zdarzenia z klawiatury
+
+## GUI_PL_15.02 ActionEvent
+`ActionEvent` korzysta z metody `actionPerformed`.
+
+```java
+public class MyButtonActionListener implements ActionListener {
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		System.out.println("Clicked");
+	}
+}
+```
+
+```java
+import javax.swing.*;
+
+public class MyFrame extends JFrame {
+	public MyFrame() {
+		JButton jButton = new JButton("MyButton");
+
+		jButton.addActionListener(new MyButtonActionListener());
+
+		jButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("AIC called");
+				
+				JButton jakbymChcialUzycEventu = (JButton) e.getSource();
+				jakbymChcialUzycEventu.setText("kliknalem");
+			}
+		});
+
+		jButton
+			.addActionListener(e -> 
+				System.out.println("Shorthand lambda"));
+
+		add(jButton);
+		pack();
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+```java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(() -> new MyFrame());
+	}
+}
+```
+
+## GUI_PL_15.03 ActionCommand i ClientProperty
+
+- Na obiekcie klasy `ActionEvent` możemy wywołać `e.getActionCommand()` który zwraca nam Stringa z domyślną wartością elementu powiązanego z `ActionEvent` 
+	- dla JButton etykietę 
+	- dla pola edycyjnego tekst zawarty tekst
+	- dla listy rozwijanej element tej listy
+- `ActionCommand` można nadpisywać żeby skomunikować się z komponentem który dostał event. Obsługuje tylko jednego Stringa na raz.
+- Jak chcę kilka rzeczy to korzystam z `clientProperty`:
+```
+jButton.getClientProperty("nazwa-klucza");
+jButton.putClientProperty("nazwa-innego-klucza", "Wartość");
+```
+- `clientProperty` obsługuje wszystkie typy a nie tylko Stringa, ale muszę rzutować wartość.
+
+## GUI_PL_15.04 MouseEvent
+- W mouse eventach nie poużywam lambd bo jest więcej niż jedna metoda 
+- `MouseInputListener` implementuje zarówno `MouseListener` jak i `MouseMotionListener` - musi przysłonić 7 metod
+- `MouseAdapter` - pozwala przysłonić tylko te które nas interesują
+
+```java
+import javax.swing.*;
+
+public class MyFrame extends JFrame {
+	public MyFrame() {
+		JButton jButton = new JButton("MyButton");
+
+		jButton.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				System.out.println("Sraluch1");
+				// w stosunku lewego górnego rogu komponentu
+				System.out.println("X: " + e.getX());
+				System.out.println("Y: " + e.getY());
+				// w stosunku lewego górnego rogu okna
+				System.out.println("X: " + e.getXOnScreen());
+				System.out.println("Y: " + e.getYOnScreen());
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+				System.out.println("Sraluch2");
+			}
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				System.out.println("Sraluch3");
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				System.out.println("Sraluch4");
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+				System.out.println("Sraluch5");
+			}
+		});
+
+		jButton.addMouseMotionListener(new MouseMotionListener() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				System.out.println("MouseDragged, ruszam wciśniętą myszką");
+			}
+
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				System.out.println("MouseDragged, ruszam nie wciśniętą myszką");
+			}
+		});
+
+		add(jButton);
+		pack();
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+
+```
+
+## GUI_PL_15.05 KeyEvent
+
+```java
+import javax.swing.*;
+
+public class MyFrame extends JFrame {
+	public MyFrame() {
+		JButton jButton = new JButton("MyButton");
+
+		jButton.addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+			// To się wywoła pomiędzy keyPressed a keyReleased
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				System.out.println(e.getKeyChar()); // Dany znak 'char'
+				System.out.println(e.getKeyCode()); // Dany unicode
+				
+				// Control / shift / etc. nie mają keyTyped
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				System.out.println("Sraluch3");
+			}
+		});
+
+		add(jButton);
+		pack();
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+## GUI_PL_15.06 WindowEvent
+- Jak nie chcę wszystkich metod napisywać to mam `WindowAdapter`
+
+```java
+import javax.swing.*;
+
+public class MyFrame extends JFrame {
+	public MyFrame() {
+		JButton jButton = new JButton("MyButton");
+
+		JFrame jFrame = this;
+
+		addWindowListener(new WindowListener(){
+			@Overide
+			public void windowOpened(WindowEvent e) {
+				
+			}
+		
+			@Overide
+			public void windowClosing(WindowEvent e) {
+				// próba zamknięcia (może się nie dać, albo confirm dialog leci)
+				int answer = JOptionPane.showConfirmDialog(null, "Takiś kurwa cfany?", "Zamknij", JOptionPane.YES_NO_OPTION);
+
+				if (answer == JOptionPane.YES_OPTION) {
+					jFrame.dispose();
+				}
+			}
+		
+			@Overide
+			public void windowClosed(WindowEvent e) {
+				// zamknięcie faktyczne
+			}
+		
+			@Overide
+			public void windowIconfield(WindowEvent e) {
+				// minimalizacja do paska zadań		
+			}
+		
+			@Overide
+			public void windowDeiconfield(WindowEvent e) {
+				// Maksymalizacja z paska zadań
+			}
+		
+			@Overide
+			public void windowActivated(WindowEvent e) {
+					// focus na oknie
+			}
+		
+			@Overide
+			public void windowDeactivated(WindowEvent e) {
+				// unfocus na oknie
+			}
+		});
+
+		add(jButton);
+		pack();
+		setLocationRelativeTo(null);
+		// JAK CHCE CONFIRM DIALOG TO MUSZĘ TO ZMIENIĆ NA DO NOTHING
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+## GUI_PL_16 Architektura MVC
+- Przykłady komponentów MVC w Swingu to `JList` i `JTable`.
+- Kontroler zapewnia interakcję komponentu z widokiem.
+- W Swingu widok i kontroler to to samo (komponent)
+- Własny model ustawiamy `setModel` na komponencie
+- Pobieramy model przez `getModel`
+- Domyślnie mamy model z prefixem `Default` np. `DefaultListModel` albo `DefaultTableModel`
+- Interfejsy modelu:
+	- `ButtonModel`
+	- `ComboboxModel`
+	- `DocumentListSelectionModel`
+	- `TableColumnModel`
+	- `ListModel`
+	- `TableModel`
