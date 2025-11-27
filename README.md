@@ -2184,3 +2184,275 @@ public class MyFrame extends JFrame {
 	- `TableColumnModel`
 	- `ListModel`
 	- `TableModel`
+
+## GUI_PL_17 JList
+- Komponent `JList` ma dwa modele: 
+	- oparty na interfejsie `ListModel` - odpowiedzialny za dane
+	- `ListSelectionModel` - odpowiedzialny za UI
+
+- `JList` posiada 2 konstruktory:
+	- pierwszy przyjmuje wektor obiektów
+	- drugi przyjmuje tablicę obiektów
+
+```java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(() -> new MyJListFrame());
+	}
+}
+```
+
+```java
+import javax.swing.*;
+
+// Prosty przykład
+public class MyListFrame extends JFrame {
+	public MyJListFrame() {
+
+		String[] arr = {"Stephan", "Damon", "Mielona", "Jeremy"};
+
+		JList jList = new JList(arr);
+		JScrollPane jScrollPane = new JScrollPane(jList);
+
+		add(jScrollPane);
+
+		setSize(200, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+--- 
+
+Przykład z `AbstractListModel`:
+
+```java
+import javax.swing.*;
+import java.util.Vector;
+
+public class MyListModel extends AbstractListModel<String> {
+
+	private Vector<String> names;
+
+	public MyListModel(Vector<String> names) {
+		this.names = names;
+	}
+
+	@Override
+	public int getSize() {
+		return names.size();
+	}
+
+	@Override
+	public String getElementAt(int index) {
+		return names.get(index);
+	}
+
+	public void add(String text, int index) {
+		names.add(index, text);
+		fireIntervalAdded(this, index, index);
+	}
+	
+	public void add(String text) {
+		add(text, getSize());
+	}
+
+	public void remove(int index) {
+		names.remove(index);
+		fireIntervalRemoved(this, index, index);
+	}
+}
+```
+
+```java
+import javax.swing.*;
+
+public class MyListFrame extends JFrame {
+	public MyJListFrame() {
+
+		String[] arr = {"Stephan", "Damon", "Mielona", "Jeremy"};
+
+		Vector<String> names = new Vector<>(Arrays.asList(arr));
+		MyListModel myListModel = new MyListModel(names);
+
+		JList jList = new JList();
+		jList.setModel(myListModel);
+
+		JButton addButton = new JButton("Add");
+		JButton removeButton = new JButton("Remove");
+
+		addButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int i = jList.getSelectedIndex();
+
+				if (i >= 0) {
+					myListModel.add("Added element", i+1);
+				} else {
+					myListModel.add("Added in the end");
+				}
+			}
+		});
+
+		removeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int i = jList.getSelectedIndex();
+
+				if (i >= 0) {
+					myListModel.remove(i);
+				}
+			}
+		});
+
+		JPanel jPanel = new JPanel(new GridLayout(1, 2));
+		jPanel.add(addButton);
+		jPanel.add(removeButton)
+		
+		JScrollPane jScrollPane = new JScrollPane(jList);
+		add(jScrollPane);
+		add(jPanel.BorderLayout.PAGE_END);
+
+		setSize(200, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+Kolejny przykład:
+
+```java
+import javax.swing.*;
+
+public class MyListCellRenderer extends JLabel implement ListCellRenderer<String> {
+
+	public MyListCellRenderer() {
+		setOpaque(true);
+	}
+
+	@Override Component getListCellRendererComponent(JList<? extends String> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+		setText(value);
+
+		if(index % 2 == 0) {
+			setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 16));
+		} else {
+			setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+		}
+
+		if (isSelected) {
+			setBackground(Color.YELLOW);
+		} else {
+			setBackground(Color.WHITE);
+		}
+
+		return this;
+	}
+}
+```
+
+## GUI_PL_18 JTable
+- `JTable` przyjmuje dwa modele danych:
+	- pierwszy reprezentuje dane (dwuwymiarowa tablica) - interfejs `TableModel`
+	- drugi reprezentuje nagłówki kolumn - interfejs `TableColumnModel`
+- Istnieje też
+	- interfejs `ListSelectionModel`
+
+```java
+import javax.swing.*;
+
+public class Main {
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(() -> new MyTableFrame());
+	}
+}
+```
+
+```java
+import javax.swing.*;
+
+public class MyTableFrame extends JFrame {
+
+	public MyTableFrame() {
+		Object[][] items = {
+			{"John", "Smith", 30},
+			{"Elon", "Musk", 10},
+			{"Michael", "Brzoska", 45},
+			{"Sławomir", "Dańczak", 35}
+		};
+
+		String[] columns = { "Name", "Surname", "Age" };
+
+		MyTableModel myTableModel = new MyTableModel(items, columns);
+
+		JTable jTable = new JTable();
+		jTable.setModel(myTableModel);
+
+		JScrollPane jScrollPane = new JScrollPane(jTable);
+
+		add(jTable);
+
+		setSize(500, 500);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+}
+```
+
+```java
+import javax.swing.table.AbstractTableModel;
+
+public class MyTableModel extends AbstractTableModel {
+
+	private Object[][] items;
+	private String[] columns;
+
+	public MyTableModel(Object[][] items, String[] columns) {
+		this.items = items;
+		this.columns = columns;
+	}
+
+	@Override
+	public int getRowCount() {
+		return items.length;
+	}
+
+	@Override
+	public int getColumnCount() {
+		return columns.length;
+	}
+
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex) {
+		return items[rowIndex][columnIndex];
+	}
+
+	@Override
+	public String getColumnName(int column) {
+		return columns[column];
+	}
+
+	@Override
+	public Class <?> getColumnClass(int columnIndex) {
+		return getValueAt(0, columnIndex).getClass();
+	}
+
+	@Override
+	boolean isCellEditable(int rowIndex, int columnIndex) {
+		return columnIndex > 0;
+	}
+
+	@Override
+	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+		items[rowIndex][columnIndex] = aValue;
+		fireTableCellUpdated(rowIndex, columnIndex);
+	}
+}
+
+```
