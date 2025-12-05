@@ -2456,3 +2456,818 @@ public class MyTableModel extends AbstractTableModel {
 }
 
 ```
+
+## GUI_PL_19.01 Wprowadzenie do JavaFX
+
+1. W JavaFX można tworzyć aplikacje na dwa sposoby:
+- Za pomocą plików FXML
+- Klasycznie w Javie tak jak wcześniej 
+2. Każda aplikacja ma 3 fazy, odpowiadają one metodą
+	- `init` - dane, przygotowanie połączenia z bazą
+	- `start` - UI
+	- `stop` - zamykanie aplikacji
+
+`module-info.java` - metadane projektu:
+
+Przykład `module-info.java`:
+```java
+module pl.pja.sladan.gui_chapter19 {
+	requires javafx.controls;
+	requires javafx.fxml;
+
+	opens pl.edu.pja.sladan.gui_chapter19 to javafx.fxml;
+	exports pl.edu.pja.sladan.gui_chapter19;
+}
+```
+
+```java
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+
+public class First extends Application {
+
+	// Main jest opcjonalne
+	public static void main(String[] args) {
+		launch(args);
+	}
+
+	@Override
+	public void init() throws Exception {
+		System.out.println("Entering init() on " + Thread.currentThread().getName());
+	}
+
+	@Override
+	public void start(Stage stage) throws Exception {
+		Button btn = new Button("Say hello");
+
+		btn.setOnAction(e -> System.out.println("Hello"));
+
+		StackPane root = new StackPane();
+		root.getChildren().add(btn);
+
+		Scene	scene = new Scene(root, 300, 250);
+
+		stage.setScene(scene);
+		stage.setTitle("Hello world!");
+		stage.show();
+	}
+	
+	@Override
+	public void stop() throws Exception {
+		System.out.println("Entering stop() on " + Thread.currentThread().getName());
+	}
+}
+```
+
+## GUI_PL_19.02 Layouts
+- `Pane` layout nie rozmieszcza automatycznie elementów, pozycjonuje względem punktu 0,0 (lewy górny róg ekranu). Wymaga `.relocate(X, Y)`.
+
+
+```java
+public class PlainPaneExample extends Application {
+
+	public void start(Stage stage) throws Exception {
+		Pane root = new Pane();
+		Button b1 = new Button("Button1");
+		Button b2 = new Button("Button2");
+	
+		b2.relocate(10, 10);
+
+		root.getChildren().addAll(b1, b2);
+	
+		stage.setScene(new Scene(root));
+		stage.setTitle("Pane example");
+		stage.show();
+	}
+}
+```
+
+```java
+public class StackPaneExample extends Application {
+
+	public void start(Stage stage) throws Exception {
+		StackPane root = new StackPane();
+		Button b1 = new Button("Button1");
+		Button b2 = new Button("Button2");
+
+		root.getChildren().add(b1);
+		root.getChildren().add(b2);
+
+		StackPane.setAlignment(b1, Pos.TOP_RIGHT);
+	
+		stage.setScene(new Scene(root, 300, 300));
+		stage.setTitle("StackPane example");
+		stage.show();
+	}
+}
+```
+
+```java
+public class BorderPaneExample extends Application {
+
+	public void start(Stage stage) throws Exception {
+		BorderPane root = new BorderPane();
+
+		TextArea textArea1 = new TextArea("TextArea 1");
+		TextArea textArea2 = new TextArea("TextArea 2");
+		TextArea textArea3 = new TextArea("TextArea 3");
+		TextArea textArea4 = new TextArea("TextArea 4");
+		TextArea textArea5 = new TextArea("TextArea 5");
+
+		root.setTop(textArea1);
+		root.setLeft(textArea2);
+		root.setCenter(textArea3);
+		root.setRight(textArea4);
+		root.setLeft(textArea5);
+
+		stage.setScene(new Scene(root, 1200, 500));
+		stage.setTitle("BorderPane example");
+		stage.show();
+	}
+}
+```
+
+## GUI_PL_19.03 Properties i bindings
+- W JavaFX mamy **Properties** i **Bindings**
+	- **Property** - obserwowalne i zwykle możliwość zapisu
+	- **Binding** - zależne od innych properties i tylko read only
+
+```java
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.Observable;
+import javafx.beans.property.InvalidationListener;
+
+public class PropertyBindingExample {
+	public static void main(String[] args) {
+		IntegerProperty src = new SimpleIntegerProperty(1);
+		src.addListener(new InvalidationListener() {
+			@Override
+			public void invalidated(Observable observable) {
+				System.out.println("Invalidated");
+			}
+		});
+
+		System.out.println("1. " + src);
+		src.set(2); // Lazy evaluation
+		src.set(3); // Nie zadziała invalidation listener
+		src.set(4); // Dopóki nie odczytam zmiennej
+		src.set(5);
+		System.out.println("3. get: " + src);
+	}
+}
+```
+
+```java
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.Observable;
+import javafx.beans.property.InvalidationListener;
+
+public class PropertyBindingExample {
+	public static void main(String[] args) {
+		IntegerProperty src = new SimpleIntegerProperty(1);
+		src.addListener(new ChangeListener<Number>() {
+			@Override
+			public void invalidated(ObservableValue <? extends Number> observableValue, Number number, Number t1) {
+				System.out.println("Changed");
+			}
+		});
+
+		System.out.println("1. " + src);
+		src.set(2); // Każdy wykona listener
+		src.set(3); // Wykonanie change listenera odpaliło by też
+		src.set(4); // Invalidation listener
+		src.set(5);
+		System.out.println("3. get: " + src);
+	}
+}
+```
+
+```java
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.StringProperty;
+import javafx.beans.property.SimpleStringProperty;
+
+public class PersonFX {
+	private final StringProperty name = new SimpleStringProperty();
+	private final IntegerProperty age = new SimpleIntegerProperty();
+
+	public PersonFX(String name, int age) {
+		this.name.set(name);
+		this.age.set(age);
+	}
+
+	public String getName() {
+		return name.get();
+	}
+
+	public int getAge() {
+		return age.get();
+	}
+
+	public SimpleString nameProperty() {
+		return name;
+	}
+
+	public SimpleInteger ageProperty() {
+		return age;
+	}
+}
+```
+
+```java
+
+public class PropertyBindingExample {
+
+	public static void main(String[] args) {
+		// Jednostronne wiązanie
+		IntegerProperty p = new SimpleIntegerProperty(1);
+		IntegerProperty q = new SimpleIntegerProperty();
+
+		q.bind(p);
+		System.out.println(q.get());
+		p.set(2);
+		System.out.println(p.get());
+		System.out.println(q.get()); // też 2
+
+		q.set(1); // wyjątek A bound value cannot be set.
+		q.unbind();ązanie
+		IntegerProperty p = new SimpleIntegerProperty(1);
+		IntegerProperty q = new SimpleIntegerProperty();
+
+		q.bind(p);
+		System.out.println(q.get());
+		p.set(2);
+		System.out.println(p.get());
+		System.out.println(q.get()); /
+
+		// Dwustronne wiązanie
+		p.bindBidirectional(q);
+		p.set(3);
+		System.out.println(p.get() + " " q.get());
+		q.set(4);
+		System.out.println(p.get() + " " + q.get());
+
+		// Własne wiązanie
+		DoubleProperty x = new SimpleDoubleProperty(3);
+		DoubleProperty y = new SimpleDoubleProperty(4);
+
+		DoubleBinding area = new DoubleBinding() {
+			{
+				super.bind(x, y);
+			}
+
+			@Override
+			protected double computeValue() {
+				return x.get() * y.get();
+			}
+		};
+
+		System.out.println(area.get());
+		x.set(5);
+		y.set(6);
+		System.out.println(area.get());
+
+		// Predefiniowane wiązania
+
+		DoubleBinding avg = Bindings.divide(Bindings.add(x, y), 2.0);
+		System.out.println(avg.get());
+
+		// --- inny sposob
+
+		DoubleBinding avg2 = Bindings.createDoubleBinding(() -> (x.get() + y.get())/2.0, x, y);
+		System.out.println(avg2.get());
+
+		// --- Inny sposób, fluen API
+
+		DoubleBinding avg3 = x.add(y).divide(2.0);
+		System.out.println(avg3.get());
+	}
+}
+```
+
+## GUI_PL_19.04 Effects
+Efekty działają na renderingu - modyfikują to jak jest renderowany węzeł a nie sam węzeł.
+
+```java
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.effects.DropShadow;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.Stage;
+
+public class EffectsBasic extends Application {
+	@Override
+	public void start(Stage stage) throws Exception {
+		Text title = new Text("JavaFX Effects");
+		title.setFont(Font.font(48));
+		title.setFill(Color.CORNFLOWERBLUE);
+
+		DropShadow shadow = new DropShadow();
+		shadow.setRadius(12);
+		shadow.offsetX(6);
+		shadow.offsetY(6);
+		shadow.setColor(Color.color(0, 0, 0, 0.35);
+
+		Reflection reflection = new Reflection();
+		reflection.setInput(shadow);
+
+		title.setEffect(reflection);
+
+		// title.setEffect(shadow);
+
+		StackPane root = new StackPane(title);
+		stage.setScene(new Scene(root, 600, 300));
+		stage.setTitle("Effects - Basic");
+		stage.show();
+	}
+}
+```
+
+## GUI_PL_19.05 List
+
+```java
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+
+public class ListViewExample extends Application {
+	@Override
+	public void start(Stage stage) throws Exception {
+		ObservableList<String> list = FXCollections.observableArrayList("Mary", "John", "Kate", "Cindy");
+
+		ListView<String> listView = new ListView<>(list);
+		listView.getSelectionModel().selectedItemProperty().addListener((observable, oldVal, newVal) -> {
+			System.out.println("oldVal: " + oldVal + " newVal: " + newVal);
+		});
+
+		Button addButton = new Button("Add");
+		Button removeButton = new Button("Remove");
+
+		addButton.setOnAction(e -> list.add("test"));
+		removeButton.setOnAction(e -> list.remove("test"));
+
+		HBox root = new HBox(listView, addButton, removeButton);
+
+		stage.setScene(new Scene(root, 400, 200));
+		stage.setTitle("ListView Example");
+		stage.show();
+	}
+}
+```
+
+## GUI_PL_19.06 Table
+
+```java
+import javafx.application.Application;
+import javafx.stage.Stage;
+import scene.Scene;
+import javafx.layout.VBox;
+
+public class TableViewExample extends Application {
+	@Override
+	public void start(Stage stage) throws Exception {
+
+		ObservableList<PersonFX> list = FXCollections.observableArrayList(
+			new PersonFX("Mary", 30),
+			new PersonFX("MaryJane", 21),
+			new PersonFX("MaryAdolf", 37),
+			new PersonFX("Marry Christmas", 997),
+			new PersonFX("Mary Sławomir", 42)
+		);
+
+		TableView<PersonFX> tableView = new TableView<>(list);
+		TableColumn<PersonFX, String> nameColumn = new TableColumn<>("Name");
+
+		nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+		TableColumn<PersonFX, Integer> ageColumn = new TableColumn<>("Age");
+		ageColumn.setCellValueFactory(new PropertyValueFactory<>("age"));
+
+		tableView.getColumns().addAll(nameColumn, ageColumn);
+
+		TextField nameTxtField = new TextField("Name");
+		TextField ageTextField = new TextField("Age");
+		Button addButton = new Button("Add");
+
+		addButton.setOnAction(e -> list.add(new PersonFX(nameTextField.getText(), Integer.parseInt(ageTextField.getText()))));
+		
+
+		stage.setScene(new Scene(new VBox(tableView, nameTextField, ageTextField, addButton), 300, 250));
+		stage.setTitle("TableView Example");
+		stage.show();
+	}
+}
+```
+
+## GUI_PL_19.07 Animacje
+
+```java
+import javafx.application.Application;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+
+public class AnimationsExample extends Application {
+	@Override
+	public void start(Stage stage) throws Error {
+		Group group = new Group();
+		Rectangle rect = new Rectangle(50, 100, 200, 100);
+
+		FadeTransition fadeTransition = new FadeTransiton(Duration.seconds(1), rect);
+		fadeTransition.setFromValue(1.0);
+		fadeTransition.setToValue(0.1);
+		// fadeTransition.setCycleCount(Animation.INDEFINITE);
+		// fadeTransition.setAutoReverse(true);
+		// fadeTransition.play();
+
+		FillTransition fillTransition = new FillTransition(Duration.seconds(1), rect, Color.RED, Color.YELLOW);
+		// fillTransition.setCycleCount(Animation.INDEFINITE);
+		// fillTransition.setAutoReverse(true);
+		// fillTransition.play();
+
+		ScaleTransition scaleTransition = new ScaleTransition(Duration.seconds(1), rect);
+		scaleTransition.setToX(0.1);
+		scaleTransition.setToY(0.2);
+		// scaleTransition.setCycleCount(Animation.INDEFINITE);
+		// scaleTransition.setAutoReverse(true);
+		// scaleTransition.play();
+
+		RotateTransition rotateTransition = new RotateTransition(Duration.seconds(1), rect);
+		rotateTransition.setFromAngle(0);
+		rotateTransition.setToAngle(180);
+		// rotateTransition.setCycleCount(Animation.INDEFINITE);
+		// rotateTransition.setAutoReverse(true);
+		// rotateTransition.play();
+
+		PathTransition pathTransition = new PathTransition(Duration.seconds(1), rect);
+		Path path = new Path();
+		path.getElements().add(new MoveTo(0, 0));
+		path.getElements().add(new LineTo(300, 300));
+
+		pathTransition.setPath(path);
+		pathTransition.setNode(rect);
+		pathTransition.setOrientation(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
+		// pathTransition.setCycleCount(Animation.INDEFINITE);
+		// pathTransition.setAutoReverse(true);
+		// pathTransition.play();
+
+		ParallelTransition parallelTransition = new ParallelTransition();
+		paralelTransition.getChildren().addAll(fadeTransition, fillTransition, scaleTransition, rotateTransition, pathTransition);
+		parallelTransition.setCycleCount(Animation.INDEFINITE);
+		parallelTransition.setAutoReverse(true);
+		parallelTransition.play();
+
+		// SequentialTransition sequentialTransition = new ParallelTransition();
+		// sequentialTransition.getChildren().addAll(fadeTransition, fillTransition, scaleTransition, rotateTransition, pathTransition);
+		// sequentialTransition.setCycleCount(Animation.INDEFINITE);
+		// sequentialTransition.setAutoReverse(true);
+		// sequentialTransition.play();
+
+		group.getChildren().add(rect);
+		Scene scene = new Scene(group, 300, 300);
+		stage.setScene(scene);
+		stage.setTitle("Animation example");
+		stage.show();
+	}
+}
+
+```
+
+
+```java
+import javafx.application.Application;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+
+public class TextAnimationExample extends Application {
+	@Override
+	public void start(Stage stage) throws Error {
+		Group group = new Group();
+
+		// String str = "Sławek Dańczak";
+		// Text text = new Text(100, 100, str);
+
+		// Animation animation = new Transition() {
+		//	{
+		//		setCycleDuration(Duration.seconds(3);
+		//	}
+		//	@Override
+		//	protected void interpolate(double v) {
+		//		int length = str.length();
+		//		int n = Math.round(length * (float) v);
+		//		text.setText(str.substring(0, n));
+		//	}
+		//};
+		// animation.play();
+		// group.getChildren().add(text);
+
+		Circle circle = new Circle(150, 150, 10);
+
+		KeyValue rad0 = new KeyValue(circle.radiusProperty(), 10);
+		KeyFrame fra0 = new KeyFrame(Duration.millis(0), rad0);
+		
+		KeyValue rad1 = new KeyValue(circle.radiusProperty(), 80);
+		KeyFrame fra1 = new KeyFrame(Duration.millis(1000), rad1);
+		
+		KeyValue rad2 = new KeyValue(circle.radiusProperty(), 10);
+		KeyFrame fra2 = new KeyFrame(Duration.millis(4000), rad2);
+
+		Timeline timeline = new Timeline();
+		timeline.getKeyFrames().addAll(fra0, fra1, fra2);
+		timeline.setCycleCount(3);
+		timeline.play();
+
+		group.getChildren().add(circle);
+
+		Scene scene = new Scene(group, 300, 300);
+		stage.setScene(scene);
+		stage.setTitle("Animation example");
+		stage.show();
+	}
+}
+```
+
+## GUI_PL_19.08 CSS
+
+```java
+import javafx.application.Application;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
+
+public class CSSExample extends Application {
+	@Override
+	public void start(Stage stage) throws Exception {
+		GridPane root = new GridPane();
+		Label label = new Label("JavaFX");
+		Button button = new Button("Button");
+		TextArea textArea = new TextArea("TextArea");
+
+		// textArea.setStyle("-fx-background-color: yellow");
+
+		root.add(label, 0,0);
+		root.add(button, 0, 1);
+		root.add(textArea, 0, 2);
+
+		Scene scene = new Scene(root, 300, 275);
+		scene.getStylesheets().add("./style.css");
+		stage.setScene(scene);
+		stage.setTitle("CSS Example");
+		stage.show();
+	}
+}
+```
+
+`style.css` powinien być w `./src/resources`
+```css
+.text-area {
+	-fx-background-color: yellow;
+	-fx-text-fill: red;
+}
+
+.text-area .content {
+	-fx-background-color: green;
+}
+
+.button {
+	-fx-font-size: 20;
+}
+
+.label {
+	-fx-font-family: 'Times New Roman';
+	-fx-font-size: 18;
+}
+```
+
+## GUI_PL_20.02 FactoryMethod
+
+```java
+public class Report {
+	private String text;
+
+	public Report(String text) {
+		this.text = text;
+	}
+
+	public String toString() {
+		return text;
+	}
+}
+```
+
+```java
+public abstract class AbstractLocation {
+	public abstract Report generateReport();
+}
+```
+
+```java
+public class WarsawLocation extends AbstractLocation {
+	@Override
+	public Report generateReport() {
+		return new Report("Report from Warsaw");
+	}
+} 
+```
+
+```java
+public class KrakowLocation extends AbstractLocation {
+	@Override
+	public Report generateReport() {
+		return new Report("Report from Krakow");
+	}
+} 
+```
+
+```java
+public class GdyniaLocation extends AbstractLocation {
+	@Override
+	public Report generateReport() {
+		return new Report("Report from Gdynia");
+	}
+} 
+```
+
+```java
+
+public class Main {
+
+	public static void main(String[] args) {
+		AbstractLocation a1 = new WarsawLocation();
+		AbstractLocation a2 = new CracowLocation();
+		AbstractLocation a3 = new GdyniaLocation();
+
+		List<AbstractLocation> list = List.of(a1, a2, a3);
+
+		for (AbstractLocation a: list)
+			System.out.println(a.generateReport());
+	}
+}
+```
+
+## GUI_PL_20.03 Singleton
+
+```java
+public class Singleton {
+	private static Singleton singleton;
+	private Singleton() {
+		// constructor body
+	}
+
+	public static Singleton getInstance() {
+		if (singleton == null) {
+			singleton = new Singleton();
+		}
+
+		return singleton;
+	}
+}
+```
+
+```java
+public class Main {
+	public static void main(String[] args) {
+		Singleton s = Singleton.getInstance();
+		Singleton s2 = Singleton.getInstance();
+
+		System.out.println("Czy są tym samym: " + s.equals(s2));
+	}
+}
+```
+
+## GUI_PL_20.04 Flyweight
+
+```java
+public class SquareDimension {
+	public int x;
+	public SquareDimension(int x) {
+		this.x = x;
+	}
+}
+```
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+public class SquareFactory {
+	private static Map<Integer, SquareDimension> map = new HashMap<>();
+
+	public static SquareDimension getSquareDimension(int length) {
+		if (!map.containsKey(length)) {
+			map.put(length, new SquareDimension(length));
+		}
+	
+		return map.get(length);
+	}
+
+	public static void count() {
+		System.out.println(map.size());
+	}
+}
+```
+
+```java
+public class Main {
+	public static void main(String[] args) {
+		for(int i = 0; i < 1000; i++)
+			SquareFactory.getSquareDimension((int)(Math.random()*1000);
+
+		SquareFactory.count();
+	}
+}
+```
+
+## GUI_PL_20.05 Memento
+
+```java
+public class Orginator {
+	private StringBuilder text;
+	
+	public Orginator() {
+		text = new StringBuilder();
+	}
+
+	public void addText(String text) {
+		this.text.append(text);
+	}
+
+	public Memento save() {
+		return new Memento(text.toString());
+	}
+
+	public void restore(Memento memento) {
+		text = memento.getText();
+	}
+
+	@Override
+	public String toString() {
+		return text.toString();
+	}
+}
+```
+
+```java
+public class Caretaker {
+	private List<Memento> mementoList = new LinkedList<>();
+
+	public void addMemento(Memento memento) {
+		mementoList.add(memento);
+	}
+
+	public Memento getMemento(int index) {
+		return mementoList.get(index);
+	}
+}
+```
+
+```java
+public class Memento {
+	private StringBuilder text;
+
+	public Memento(String text) {
+		this.text = new StringBuilder(text);
+	}	
+
+	public StringBuilder getText() {
+		return text;
+	}
+}
+```
+
+```java
+public class Main {
+	public static void main(String[] args) {
+		Caretaker caretaker = new Caretaker();
+		Orginator orginator = new Orginator();
+		orginator.addText("Joanna ");
+		caretaker.addMemento(orginator.save());
+		orginator.addText("has ");
+		caretaker.addMemento(orginator.save());
+		orginator.addText("a ");
+		caretaker.addMemento(orginator.save());
+		orginator.addText("cat.");
+		caretaker.addMemento(orginator.save());
+
+		System.out.println(orginator);
+		orginator.restore(caretaker.getMemento(2));
+		System.out.println(orginator);
+		orginator.restore(caretaker.getMemento(0));
+		System.out.println(orginator);
+	}
+}
+```
